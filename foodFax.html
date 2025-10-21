@@ -6,93 +6,157 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root { --gap: 16px; }
-    body {
-      margin: 0; padding: 24px;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background: #f6f7f9;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(240px, 1fr));
-      gap: var(--gap);
-      max-width: 900px;
-      margin: 0 auto;
-    }
-    .box {
-      background: #fff;
-      border: 1px solid #e3e6ea;
-      border-radius: 10px;
-      padding: 16px;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-    }
-    .title {
-      font-size: 28px;
-      font-weight: 700;
-      color: #000;
-      margin: 4px 0 8px;
-      letter-spacing: 0.5px;
-    }
+    body { margin: 0; padding: 24px; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: #f6f7f9; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(240px, 1fr)); gap: var(--gap); max-width: 980px; margin: 0 auto; }
+    .box { background: #fff; border: 1px solid #e3e6ea; border-radius: 12px; padding: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+    .title { font-size: 28px; font-weight: 700; color: #000; margin: 4px 0 8px; letter-spacing: 0.3px; }
     .muted { color: #6b7280; font-size: 14px; }
-
-    /* Basic form bits */
     label { display: block; font-weight: 600; margin-bottom: 8px; }
     input[type="file"] { width: 100%; }
-    button {
-      width: 100%;
-      padding: 12px 16px;
-      border: 0;
-      border-radius: 8px;
-      background: #111827;
-      color: #fff;
-      font-weight: 600;
-      cursor: pointer;
-    }
+    button { width: 100%; padding: 12px 16px; border: 0; border-radius: 10px; background: #111827; color: #fff; font-weight: 600; cursor: pointer; }
     button:disabled { opacity: 0.6; cursor: not-allowed; }
-
-    /* Make it stack on small screens */
-    @media (max-width: 640px) {
-      .grid { grid-template-columns: 1fr; }
-    }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px 12px; border-bottom: 1px solid #e5e7eb; text-align: left; }
+    th { font-size: 14px; color: #374151; }
+    tfoot td { font-weight: 700; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
 
   <div class="grid">
-    <!-- BOX 1: Title -->
+    <!--Title -->
     <section class="box">
-      <div class="title">Food fax</div>
-      <p class="muted">Simple OCR helper UI. (Hook this up to your EasyOCR script.)</p>
-      <!-- FUTURE: Add small stats, last processed file name, etc. -->
+      <div class="title">Food Fax</div>
+      <p class="muted">Upload a nutrition label image.</p>
     </section>
 
-    <!-- BOX 2: File Upload -->
+    <!--Upload + Submit-->
     <section class="box">
       <label for="fileInput">Upload an image (PNG/JPG):</label>
       <input id="fileInput" type="file" accept=".png,.jpg,.jpeg" />
-      <p class="muted">We’ll send this to your OCR step and save text to <code>Text.txt</code>.</p>
-      <!-- FUTURE: Add drag-and-drop, multiple files, progress bar -->
-    </section>
-
-    <!-- BOX 3: Submit Button -->
-    <section class="box">
-      <label class="muted">When ready, click to process:</label>
+      <div style="height:10px"></div>
       <button id="submitBtn">Submit</button>
-      <!-- FUTURE: Disable until file chosen, show spinners, etc. -->
+      <p class="muted" style="margin-top:8px">Tip: you can upload multiple labels one by one; totals will add up.</p>
     </section>
 
-    <!-- BOX 4: Placeholder for now / Results / Notes -->
-    <section class="box" id="resultsBox">
-      <label class="muted">Results / Notes</label>
-      <div id="output" style="min-height: 80px;">
-        <!-- FUTURE: Show OCR text preview, link to Text.txt, errors, etc. -->
-        <em>No output yet.</em>
+    <!--Results table-->
+    <section class="box" style="grid-column: 1 / -1;">
+      <label class="muted">Results</label>
+      <div id="output">
+        <em>No results yet.</em>
       </div>
+    </section>
+
+    <!--Raw text for now could change later (last upload) -->
+    <section class="box" style="grid-column: 1 / -1;">
+      <label class="muted">Last OCR Text</label>
+      <pre id="rawText" class="mono" style="min-height:80px; white-space:pre-wrap; margin:0;">—</pre>
     </section>
   </div>
 
-  <script>
-    // Minimal front-end hooks (no backend wired yet).
-    //  Replace this with real integration ---NEXT STEP--- fetch to a server, local script, etc.)
-    const fileInput = document.getElementById('fileInput');
-    const submitBtn = document.getElementById('submitBtn');
-    const output = document.getElementById('output');
+<script>
+  const API_BASE = 'http://localhost:5000';
+
+  // DOM
+  const fileInput = document.getElementById('fileInput');
+  const submitBtn = document.getElementById('submitBtn');
+  const output    = document.getElementById('output');
+  const rawTextEl = document.getElementById('rawText');
+
+  // State
+  const entries = [];  // {file, protein, fat, carbs for now could add some more later}
+  function renderTable() {
+    if (!entries.length) {
+      output.innerHTML = "<em>No results yet.</em>";
+      return;
+    }
+    const totals = entries.reduce((t, e) => ({
+      protein: t.protein + e.protein,
+      fat:     t.fat     + e.fat,
+      carbs:   t.carbs   + e.carbs
+    }), {protein:0, fat:0, carbs:0});
+
+    const rows = entries.map(e => `
+      <tr>
+        <td>${e.file}</td>
+        <td>${e.protein.toFixed(1)} g</td>
+        <td>${e.fat.toFixed(1)} g</td>
+        <td>${e.carbs.toFixed(1)} g</td>
+      </tr>
+    `).join("");
+
+    output.innerHTML = `
+      <table>
+        <thead>
+          <tr><th>File</th><th>Protein</th><th>Total Fat</th><th>Total Carbs</th></tr>
+        </thead>
+        <tbody>${rows}</tbody>
+        <tfoot>
+          <tr>
+            <td>Total</td>
+            <td>${totals.protein.toFixed(1)} g</td>
+            <td>${totals.fat.toFixed(1)} g</td>
+            <td>${totals.carbs.toFixed(1)} g</td>
+          </tr>
+        </tfoot>
+      </table>
+      <div style="margin-top:8px">
+        <button id="resetBtn" style="background:#374151">Reset Totals</button>
+      </div>
+    `;
+
+    document.getElementById('resetBtn').onclick = () => {
+      entries.splice(0, entries.length);
+      renderTable();
+      rawTextEl.textContent = '—';
+    };
+  }
+
+  async function postImage(file) {
+    const form = new FormData();
+    form.append('image', file);
+
+    const res = await fetch(`${API_BASE}/ocr`, { method: 'POST', body: form, mode: 'cors', cache: 'no-store' });
+    const ct = res.headers.get('content-type') || '';
+    if (!res.ok) {
+      const msg = ct.includes('application/json') ? (await res.json()).error : await res.text();
+      throw new Error(msg || `HTTP ${res.status}`);
+    }
+    return res.json();
+  }
+
+  submitBtn.addEventListener('click', async () => {
+    const file = fileInput.files && fileInput.files[0];
+    if (!file) {
+      output.innerHTML = "<span style='color:#b91c1c'>Please choose a file first.</span>";
+      return;
+    }
+
+    submitBtn.disabled = true;
+    const prev = output.innerHTML;
+    output.innerHTML = "<span class='muted'>Processing…</span>";
+
+    try {
+      const { parsed = {}, raw_text = '', filename = file.name } = await postImage(file);
+      const protein = Number(parsed.protein_g) || 0;
+      const fat     = Number(parsed.fat_g)     || 0;
+      const carbs   = Number(parsed.carbs_g)   || 0;
+
+      entries.push({ file: filename, protein, fat, carbs });
+      renderTable();
+      rawTextEl.textContent = raw_text || '—';
+      fileInput.value = "";
+    } catch (err) {
+      output.innerHTML = prev; // restore table if we add one
+      alert(`Error: ${err.message}`);
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+
+  renderTable(); // initial
+</script>
+</body>
+</html>
