@@ -2,161 +2,221 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Food fax</title>
+  <title>Food Fax</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root { --gap: 16px; }
-    body { margin: 0; padding: 24px; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: #f6f7f9; }
-    .grid { display: grid; grid-template-columns: repeat(2, minmax(240px, 1fr)); gap: var(--gap); max-width: 980px; margin: 0 auto; }
-    .box { background: #fff; border: 1px solid #e3e6ea; border-radius: 12px; padding: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
-    .title { font-size: 28px; font-weight: 700; color: #000; margin: 4px 0 8px; letter-spacing: 0.3px; }
-    .muted { color: #6b7280; font-size: 14px; }
-    label { display: block; font-weight: 600; margin-bottom: 8px; }
-    input[type="file"] { width: 100%; }
-    button { width: 100%; padding: 12px 16px; border: 0; border-radius: 10px; background: #111827; color: #fff; font-weight: 600; cursor: pointer; }
-    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: #f6f7f9;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: var(--gap);
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .box {
+      background: #fff;
+      border: 1px solid #e3e6ea;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 1px 2px rgba(0,0,0,.04);
+    }
+    .title {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: .2px;
+    }
+    .muted {
+      color: #6b7280;
+      font-size: 14px;
+    }
+
+    .header {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border: none;
+      border-radius: 10px;
+      background: #111827;
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn:disabled { opacity: .6; cursor: not-allowed; }
+
+    .chart {
+      min-height: 220px;
+      display: grid;
+      place-items: center;
+      border: 2px dashed #d1d5db;
+      color: #6b7280;
+      font-weight: 700;
+      border-radius: 12px;
+    }
+
+    .pie { grid-column: span 6; }
+    .bar { grid-column: span 6; }
+    .table { grid-column: 1 / -1; }
+    .raw { grid-column: 1 / -1; }
+
     table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 10px 12px; border-bottom: 1px solid #e5e7eb; text-align: left; }
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: left;
+    }
     th { font-size: 14px; color: #374151; }
     tfoot td { font-weight: 700; }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-    @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } }
+
+    @media (max-width: 800px) {
+      .pie, .bar { grid-column: 1 / -1; }
+    }
   </style>
 </head>
 <body>
-
   <div class="grid">
-    <!--Title -->
-    <section class="box">
+    <!-- header -->
+    <section class="box header">
       <div class="title">Food Fax</div>
-      <p class="muted">Upload a nutrition label image.</p>
-    </section>
-
-    <!--Upload + Submit-->
-    <section class="box">
-      <label for="fileInput">Upload an image (PNG/JPG):</label>
-      <input id="fileInput" type="file" accept=".png,.jpg,.jpeg" />
-      <div style="height:10px"></div>
-      <button id="submitBtn">Submit</button>
-      <p class="muted" style="margin-top:8px">Tip: you can upload multiple labels one by one; totals will add up.</p>
-    </section>
-
-    <!--Results table-->
-    <section class="box" style="grid-column: 1 / -1;">
-      <label class="muted">Results</label>
-      <div id="output">
-        <em>No results yet.</em>
+      <div>
+        <button id="addMealBtn" class="btn">Add Meal</button>
+        <input id="fileInput" type="file" accept=".png,.jpg,.jpeg" style="display:none" />
       </div>
     </section>
 
-    <!--Raw text for now could change later (last upload) -->
-    <section class="box" style="grid-column: 1 / -1;">
+    <!-- charts -->
+    <section class="box pie">
+      <div class="chart">Pie Chart</div>
+      <p class="muted" style="margin-top:10px">macros will show up here later</p>
+    </section>
+
+    <section class="box bar">
+      <div class="chart">Bar Chart</div>
+      <p class="muted" style="margin-top:10px">meal breakdown placeholder</p>
+    </section>
+
+    <!-- results -->
+    <section class="box table">
+      <label class="muted">Results</label>
+      <div id="output"><em>No results yet.</em></div>
+    </section>
+
+    <!-- raw text -->
+    <section class="box raw">
       <label class="muted">Last OCR Text</label>
       <pre id="rawText" class="mono" style="min-height:80px; white-space:pre-wrap; margin:0;">—</pre>
     </section>
   </div>
 
-<script>
-  const API_BASE = 'http://localhost:5000';
+  <script>
+    const API = 'http://localhost:5000';
+    const fileInput = document.getElementById('fileInput');
+    const addBtn = document.getElementById('addMealBtn');
+    const output = document.getElementById('output');
+    const rawOut = document.getElementById('rawText');
+    const meals = [];
 
-  // DOM
-  const fileInput = document.getElementById('fileInput');
-  const submitBtn = document.getElementById('submitBtn');
-  const output    = document.getElementById('output');
-  const rawTextEl = document.getElementById('rawText');
+    function drawTable() {
+      if (!meals.length) {
+        output.innerHTML = "<em>No results yet.</em>";
+        return;
+      }
+      const totals = meals.reduce((t, m) => ({
+        protein: t.protein + m.protein,
+        fat: t.fat + m.fat,
+        carbs: t.carbs + m.carbs
+      }), {protein:0, fat:0, carbs:0});
 
-  // State
-  const entries = [];  // {file, protein, fat, carbs for now could add some more later}
-  function renderTable() {
-    if (!entries.length) {
-      output.innerHTML = "<em>No results yet.</em>";
-      return;
-    }
-    const totals = entries.reduce((t, e) => ({
-      protein: t.protein + e.protein,
-      fat:     t.fat     + e.fat,
-      carbs:   t.carbs   + e.carbs
-    }), {protein:0, fat:0, carbs:0});
+      const rows = meals.map(m => `
+        <tr>
+          <td>${m.file}</td>
+          <td>${m.protein.toFixed(1)} g</td>
+          <td>${m.fat.toFixed(1)} g</td>
+          <td>${m.carbs.toFixed(1)} g</td>
+        </tr>`).join("");
 
-    const rows = entries.map(e => `
-      <tr>
-        <td>${e.file}</td>
-        <td>${e.protein.toFixed(1)} g</td>
-        <td>${e.fat.toFixed(1)} g</td>
-        <td>${e.carbs.toFixed(1)} g</td>
-      </tr>
-    `).join("");
+      output.innerHTML = `
+        <table>
+          <thead>
+            <tr><th>File</th><th>Protein</th><th>Total Fat</th><th>Total Carbs</th></tr>
+          </thead>
+          <tbody>${rows}</tbody>
+          <tfoot>
+            <tr>
+              <td>Total</td>
+              <td>${totals.protein.toFixed(1)} g</td>
+              <td>${totals.fat.toFixed(1)} g</td>
+              <td>${totals.carbs.toFixed(1)} g</td>
+            </tr>
+          </tfoot>
+        </table>
+        <div style="margin-top:8px">
+          <button id="resetBtn" class="btn" style="background:#374151">Reset Totals</button>
+        </div>
+      `;
 
-    output.innerHTML = `
-      <table>
-        <thead>
-          <tr><th>File</th><th>Protein</th><th>Total Fat</th><th>Total Carbs</th></tr>
-        </thead>
-        <tbody>${rows}</tbody>
-        <tfoot>
-          <tr>
-            <td>Total</td>
-            <td>${totals.protein.toFixed(1)} g</td>
-            <td>${totals.fat.toFixed(1)} g</td>
-            <td>${totals.carbs.toFixed(1)} g</td>
-          </tr>
-        </tfoot>
-      </table>
-      <div style="margin-top:8px">
-        <button id="resetBtn" style="background:#374151">Reset Totals</button>
-      </div>
-    `;
-
-    document.getElementById('resetBtn').onclick = () => {
-      entries.splice(0, entries.length);
-      renderTable();
-      rawTextEl.textContent = '—';
-    };
-  }
-
-  async function postImage(file) {
-    const form = new FormData();
-    form.append('image', file);
-
-    const res = await fetch(`${API_BASE}/ocr`, { method: 'POST', body: form, mode: 'cors', cache: 'no-store' });
-    const ct = res.headers.get('content-type') || '';
-    if (!res.ok) {
-      const msg = ct.includes('application/json') ? (await res.json()).error : await res.text();
-      throw new Error(msg || `HTTP ${res.status}`);
-    }
-    return res.json();
-  }
-
-  submitBtn.addEventListener('click', async () => {
-    const file = fileInput.files && fileInput.files[0];
-    if (!file) {
-      output.innerHTML = "<span style='color:#b91c1c'>Please choose a file first.</span>";
-      return;
+      document.getElementById('resetBtn').onclick = () => {
+        meals.length = 0;
+        drawTable();
+        rawOut.textContent = '—';
+      };
     }
 
-    submitBtn.disabled = true;
-    const prev = output.innerHTML;
-    output.innerHTML = "<span class='muted'>Processing…</span>";
-
-    try {
-      const { parsed = {}, raw_text = '', filename = file.name } = await postImage(file);
-      const protein = Number(parsed.protein_g) || 0;
-      const fat     = Number(parsed.fat_g)     || 0;
-      const carbs   = Number(parsed.carbs_g)   || 0;
-
-      entries.push({ file: filename, protein, fat, carbs });
-      renderTable();
-      rawTextEl.textContent = raw_text || '—';
-      fileInput.value = "";
-    } catch (err) {
-      output.innerHTML = prev; // restore table if we add one
-      alert(`Error: ${err.message}`);
-    } finally {
-      submitBtn.disabled = false;
+    async function sendImage(file) {
+      const form = new FormData();
+      form.append('image', file);
+      const res = await fetch(`${API}/ocr`, { method: 'POST', body: form, mode: 'cors', cache: 'no-store' });
+      const type = res.headers.get('content-type') || '';
+      if (!res.ok) {
+        const msg = type.includes('application/json') ? (await res.json()).error : await res.text();
+        throw new Error(msg || `HTTP ${res.status}`);
+      }
+      return res.json();
     }
-  });
 
-  renderTable(); // initial
-</script>
+    addBtn.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      addBtn.disabled = true;
+      const prev = output.innerHTML;
+      if (!meals.length) output.innerHTML = "<span class='muted'>Processing...</span>";
+
+      try {
+        const { parsed = {}, raw_text = '', filename = file.name } = await sendImage(file);
+        const p = Number(parsed.protein_g) || 0;
+        const f = Number(parsed.fat_g) || 0;
+        const c = Number(parsed.carbs_g) || 0;
+        meals.push({ file: filename, protein: p, fat: f, carbs: c });
+        drawTable();
+        rawOut.textContent = raw_text || '—';
+      } catch (err) {
+        output.innerHTML = prev;
+        alert(`Error: ${err.message}`);
+      } finally {
+        addBtn.disabled = false;
+        fileInput.value = "";
+      }
+    });
+
+    drawTable();
+  </script>
 </body>
 </html>
