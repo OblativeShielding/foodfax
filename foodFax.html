@@ -124,12 +124,13 @@
   </div>
 
   <script>
+    // API configuration and DOM elements
     const API = 'http://localhost:5000';
     const fileInput = document.getElementById('fileInput');
     const addBtn = document.getElementById('addMealBtn');
     const output = document.getElementById('output');
     const rawOut = document.getElementById('rawText');
-    const meals = [];
+    const meals = []; // Store all meal data
 
     function drawTable() {
       if (!meals.length) {
@@ -178,6 +179,7 @@
     }
 
     async function sendImage(file) {
+      // Send image to backend for OCR processing
       const form = new FormData();
       form.append('image', file);
       const res = await fetch(`${API}/ocr`, { method: 'POST', body: form, mode: 'cors', cache: 'no-store' });
@@ -192,6 +194,7 @@
     addBtn.addEventListener('click', () => fileInput.click());
 
     fileInput.addEventListener('change', async (e) => {
+      // Handle file upload and processing
       const file = e.target.files?.[0];
       if (!file) return;
 

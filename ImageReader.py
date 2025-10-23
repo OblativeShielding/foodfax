@@ -2,19 +2,24 @@ from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import easyocr, re
 
+# Flask app setup
 app = Flask(__name__, static_folder='.', static_url_path='')
 CORS(app, resources={r"/*": {"origins": "*"}})
 
+# Initialize OCR reader for English text
 reader = easyocr.Reader(['en'], gpu=False, verbose=False)
 
 def parse_nutrition(text: str):
+    """Extract nutrition data from OCR text using regex patterns"""
     t = text.lower()
 
     def gi(pat):
+        """Get integer value from pattern"""
         m = re.search(pat, t, flags=re.I)
         return int(m.group(1)) if m else 0
 
     def gf_first(patterns):
+        """Get first float value from list of patterns"""
         for pat in patterns:
             m = re.search(pat, t, flags=re.I)
             if m:
@@ -44,6 +49,7 @@ def parse_nutrition(text: str):
     }
 @app.post("/ocr")
 def ocr():
+    """Handle image upload and OCR processing"""
     f = request.files.get("image")
     if not f or f.filename == "":
         return jsonify({"error": "No file provided under form field 'image'."}), 400
