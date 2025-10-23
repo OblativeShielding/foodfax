@@ -33,7 +33,7 @@ FoodFax is a web application that allows users to upload images of food nutritio
 
 1. **Install Python Dependencies**:
    ```bash
-   pip install flask flask-cors easyocr
+   pip install flask, flask-cors, easyocr
    ```
 
 2. **Run the Backend Server**:
