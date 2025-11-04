@@ -6,220 +6,214 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root { --gap: 16px; }
-    body {
-      margin: 0;
-      padding: 24px;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background: #f6f7f9;
+    body { margin: 0; padding: 24px; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: #f6f7f9; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(240px, 1fr)); gap: var(--gap); max-width: 980px; margin: 0 auto; }
+    .box { background: #fff; border: 1px solid #e3e6ea; border-radius: 12px; padding: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+    .title { font-size: 28px; font-weight: 700; color: #000; margin: 4px 0 8px; letter-spacing: 0.3px; }
+    .muted { color: #6b7280; font-size: 14px; }
+    label { display: block; font-weight: 600; margin-bottom: 8px; }
+    input[type="file"] { width: 100%; }
+    .fileline { display:flex; align-items:center; gap:8px; margin-top:8px; }
+    .filename { font-size: 12px; color:#374151; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    button {
+      width: 100%; padding: 12px 16px;
+      border: 0; border-radius: 10px;
+      background: #dc2626; color: #fff;
+      font-weight: 600; cursor: pointer;
     }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(12, 1fr);
-      gap: var(--gap);
-      max-width: 1100px;
-      margin: 0 auto;
-    }
-    .box {
-      background: #fff;
-      border: 1px solid #e3e6ea;
-      border-radius: 12px;
-      padding: 16px;
-      box-shadow: 0 1px 2px rgba(0,0,0,.04);
-    }
-    .title {
-      font-size: 28px;
-      font-weight: 800;
-      letter-spacing: .2px;
-    }
-    .muted {
-      color: #6b7280;
-      font-size: 14px;
-    }
-
-    .header {
-      grid-column: 1 / -1;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 14px 18px;
-    }
-
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 14px;
-      border: none;
-      border-radius: 10px;
-      background: #111827;
-      color: #fff;
-      font-weight: 700;
-      cursor: pointer;
-    }
-    .btn:disabled { opacity: .6; cursor: not-allowed; }
-
-    .chart {
-      min-height: 220px;
-      display: grid;
-      place-items: center;
-      border: 2px dashed #d1d5db;
-      color: #6b7280;
-      font-weight: 700;
-      border-radius: 12px;
-    }
-
-    .pie { grid-column: span 6; }
-    .bar { grid-column: span 6; }
-    .table { grid-column: 1 / -1; }
-    .raw { grid-column: 1 / -1; }
-
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    button:hover { filter: brightness(0.95); }
     table { width: 100%; border-collapse: collapse; }
-    th, td {
-      padding: 10px 12px;
-      border-bottom: 1px solid #e5e7eb;
-      text-align: left;
-    }
+    th, td { padding: 10px 12px; border-bottom: 1px solid #e5e7eb; text-align: left; }
     th { font-size: 14px; color: #374151; }
     tfoot td { font-weight: 700; }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 
-    @media (max-width: 800px) {
-      .pie, .bar { grid-column: 1 / -1; }
-    }
+    .pies { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .pie { display:flex; flex-direction:column; align-items:center; gap:8px; }
+    .pie svg { width: 110px; height: 110px; }
+    .pie .label { font-weight: 700; font-size: 14px; }
+    .pie .sub { font-size: 12px; color:#6b7280; }
+    @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } .pies{grid-template-columns: repeat(2,1fr);} }
+
+    .status { margin-top:8px; font-size: 13px; }
+    .status.ok { color:#065f46; }
+    .status.err { color:#b91c1c; }
+    .status.muted { color:#6b7280; }
   </style>
 </head>
 <body>
+
   <div class="grid">
-    <!-- header -->
-    <section class="box header">
+    <section class="box">
       <div class="title">Food Fax</div>
-      <div>
-        <button id="addMealBtn" class="btn">Add Meal</button>
-        <input id="fileInput" type="file" accept=".png,.jpg,.jpeg" style="display:none" />
+      <p class="muted">Upload a nutrition label image.</p>
+    </section>
+
+    <section class="box">
+      <label for="fileInput">Upload an image (PNG/JPG):</label>
+      <input id="fileInput" type="file" accept=".png,.jpg,.jpeg" />
+      <div class="fileline">
+        <span class="muted">Selected:</span>
+        <span id="fileName" class="filename">None</span>
+      </div>
+      <div style="height:10px"></div>
+      <button id="submitBtn" type="button">Submit</button>
+      <div id="status" class="status muted">Waiting for a file…</div>
+    </section>
+
+    <section class="box" style="grid-column: 1 / -1;">
+      <label class="muted">Daily Progress (Average American Diet Targets)</label>
+      <div class="pies">
+        <div class="pie" id="pie-cal"></div>
+        <div class="pie" id="pie-carbs"></div>
+        <div class="pie" id="pie-fat"></div>
+        <div class="pie" id="pie-protein"></div>
       </div>
     </section>
 
-    <!-- charts -->
-    <section class="box pie">
-      <div class="chart">Pie Chart</div>
-      <p class="muted" style="margin-top:10px">macros will show up here later</p>
-    </section>
-
-    <section class="box bar">
-      <div class="chart">Bar Chart</div>
-      <p class="muted" style="margin-top:10px">meal breakdown placeholder</p>
-    </section>
-
-    <!-- results -->
-    <section class="box table">
+    <section class="box" style="grid-column: 1 / -1;">
       <label class="muted">Results</label>
       <div id="output"><em>No results yet.</em></div>
     </section>
 
-    <!-- raw text -->
-    <section class="box raw">
+    <section class="box" style="grid-column: 1 / -1;">
       <label class="muted">Last OCR Text</label>
       <pre id="rawText" class="mono" style="min-height:80px; white-space:pre-wrap; margin:0;">—</pre>
     </section>
   </div>
 
-  <script>
-    // API configuration and DOM elements
-    const API = 'http://localhost:5000';
-    const fileInput = document.getElementById('fileInput');
-    const addBtn = document.getElementById('addMealBtn');
-    const output = document.getElementById('output');
-    const rawOut = document.getElementById('rawText');
-    const meals = []; // Store all meal data
+<script>
+  const API_BASE = 'http://localhost:5000';
 
-    function drawTable() {
-      if (!meals.length) {
-        output.innerHTML = "<em>No results yet.</em>";
-        return;
-      }
-      const totals = meals.reduce((t, m) => ({
-        protein: t.protein + m.protein,
-        fat: t.fat + m.fat,
-        carbs: t.carbs + m.carbs
-      }), {protein:0, fat:0, carbs:0});
+  const fileInput = document.getElementById('fileInput');
+  const fileNameEl = document.getElementById('fileName');
+  const submitBtn = document.getElementById('submitBtn');
+  const output    = document.getElementById('output');
+  const rawTextEl = document.getElementById('rawText');
+  const statusEl  = document.getElementById('status');
 
-      const rows = meals.map(m => `
-        <tr>
-          <td>${m.file}</td>
-          <td>${m.protein.toFixed(1)} g</td>
-          <td>${m.fat.toFixed(1)} g</td>
-          <td>${m.carbs.toFixed(1)} g</td>
-        </tr>`).join("");
+  const elPieCal     = document.getElementById('pie-cal');
+  const elPieCarbs   = document.getElementById('pie-carbs');
+  const elPieFat     = document.getElementById('pie-fat');
+  const elPieProtein = document.getElementById('pie-protein');
 
-      output.innerHTML = `
-        <table>
-          <thead>
-            <tr><th>File</th><th>Protein</th><th>Total Fat</th><th>Total Carbs</th></tr>
-          </thead>
-          <tbody>${rows}</tbody>
-          <tfoot>
-            <tr>
-              <td>Total</td>
-              <td>${totals.protein.toFixed(1)} g</td>
-              <td>${totals.fat.toFixed(1)} g</td>
-              <td>${totals.carbs.toFixed(1)} g</td>
-            </tr>
-          </tfoot>
-        </table>
-        <div style="margin-top:8px">
-          <button id="resetBtn" class="btn" style="background:#374151">Reset Totals</button>
-        </div>
-      `;
+  // running entries and targets
+  const entries = [];
+  const TARGETS = { calories: 2000, carbs_g: 250, fat_g: 78, protein_g: 75 };
 
-      document.getElementById('resetBtn').onclick = () => {
-        meals.length = 0;
-        drawTable();
-        rawOut.textContent = '—';
-      };
+  fileInput.addEventListener('change', () => {
+    const f = fileInput.files && fileInput.files[0];
+    fileNameEl.textContent = f ? f.name : 'None';
+    statusEl.textContent = f ? 'Ready to submit.' : 'Waiting for a file…';
+    statusEl.className = f ? 'status ok' : 'status muted';
+  });
+
+  function clamp01(x){ return Math.max(0, Math.min(1, x)); }
+  function makePie(pct, label, sublabel){
+    const r = 48, c = 2 * Math.PI * r;
+    const dash = clamp01(pct) * c, remain = c - dash;
+    return `
+      <svg viewBox="0 0 120 120" aria-label="${label} ${Math.round(pct*100)}%">
+        <circle cx="60" cy="60" r="${r}" fill="none" stroke="#e5e7eb" stroke-width="12"></circle>
+        <circle cx="60" cy="60" r="${r}" fill="none" stroke="#111827" stroke-width="12"
+          stroke-dasharray="${dash} ${remain}" stroke-linecap="round"
+          transform="rotate(-90 60 60)"></circle>
+        <text x="60" y="64" text-anchor="middle" font-size="18" font-weight="700" fill="#111827">${Math.round(pct*100)}%</text>
+      </svg>
+      <div class="label">${label}</div>
+      <div class="sub">${sublabel}</div>`;
+  }
+
+  function renderPies(tot){
+    const calPct  = tot.calories / TARGETS.calories;
+    const carbPct = tot.carbs / TARGETS.carbs_g;
+    const fatPct  = tot.fat / TARGETS.fat_g;
+    const proPct  = tot.protein / TARGETS.protein_g;
+    elPieCal.innerHTML     = makePie(calPct,  "Calories", `${tot.calories.toFixed(0)} / ${TARGETS.calories} calories`);
+    elPieCarbs.innerHTML   = makePie(carbPct, "Carbs",    `${tot.carbs.toFixed(1)} / ${TARGETS.carbs_g} g`);
+    elPieFat.innerHTML     = makePie(fatPct,  "Fat",      `${tot.fat.toFixed(1)} / ${TARGETS.fat_g} g`);
+    elPieProtein.innerHTML = makePie(proPct,  "Protein",  `${tot.protein.toFixed(1)} / ${TARGETS.protein_g} g`);
+  }
+
+  function renderTable() {
+    const totals = entries.reduce((t, e) => ({
+      calories: t.calories + e.calories,
+      protein : t.protein  + e.protein,
+      fat     : t.fat      + e.fat,
+      carbs   : t.carbs    + e.carbs
+    }), {calories:0, protein:0, fat:0, carbs:0});
+
+    renderPies(totals);
+    if (!entries.length) { output.innerHTML = "<em>No results yet.</em>"; return; }
+
+    const rows = entries.map(e => `
+      <tr><td>${e.file}</td><td>${e.calories.toFixed(0)}</td>
+          <td>${e.protein.toFixed(1)} g</td><td>${e.fat.toFixed(1)} g</td><td>${e.carbs.toFixed(1)} g</td></tr>`).join("");
+
+    output.innerHTML = `
+      <table>
+        <thead><tr><th>File</th><th>Calories</th><th>Protein</th><th>Total Fat</th><th>Total Carbs</th></tr></thead>
+        <tbody>${rows}</tbody>
+        <tfoot><tr><td>Total</td><td>${totals.calories.toFixed(0)}</td>
+          <td>${totals.protein.toFixed(1)} g</td><td>${totals.fat.toFixed(1)} g</td><td>${totals.carbs.toFixed(1)} g</td></tr></tfoot>
+      </table>
+      <div style="margin-top:8px"><button id="resetBtn" type="button" style="background:#374151">Reset Totals</button></div>`;
+    document.getElementById('resetBtn').onclick = () => { entries.length = 0; renderTable(); rawTextEl.textContent='—'; };
+  }
+
+  async function postImage(file){
+    const form = new FormData();
+    form.append('image', file);
+    let res;
+    try {
+      res = await fetch(`${API_BASE}/ocr`, { method:'POST', body:form, mode:'cors', cache:'no-store' });
+    } catch (e) {
+      throw new Error(`Network error talking to ${API_BASE}/ocr. Is the server running?`);
+    }
+    const ct = res.headers.get('content-type') || '';
+    if(!res.ok){
+      const msg = ct.includes('application/json') ? (await res.json()).error : await res.text();
+      throw new Error(msg || `HTTP ${res.status}`);
+    }
+    return res.json();
+  }
+
+  submitBtn.addEventListener('click', async ()=>{
+    const file = fileInput.files && fileInput.files[0];
+    if(!file){
+      statusEl.textContent = 'Please choose a file first.';
+      statusEl.className = 'status err';
+      return;
     }
 
-    async function sendImage(file) {
-      // Send image to backend for OCR processing
-      const form = new FormData();
-      form.append('image', file);
-      const res = await fetch(`${API}/ocr`, { method: 'POST', body: form, mode: 'cors', cache: 'no-store' });
-      const type = res.headers.get('content-type') || '';
-      if (!res.ok) {
-        const msg = type.includes('application/json') ? (await res.json()).error : await res.text();
-        throw new Error(msg || `HTTP ${res.status}`);
-      }
-      return res.json();
+    submitBtn.disabled = true;
+    const prev = output.innerHTML;
+    statusEl.textContent = 'Processing…';
+    statusEl.className = 'status muted';
+    output.innerHTML = "<span class='muted'>Processing…</span>";
+
+    try{
+      const { parsed={}, raw_text='', filename } = await postImage(file);
+      const protein=+parsed.protein_g||0, fat=+parsed.fat_g||0, carbs=+parsed.carbs_g||0, calories=+parsed.calories||0;
+
+      entries.push({ file: filename || (file.name || 'uploaded'), calories, protein, fat, carbs });
+      renderTable();
+      rawTextEl.textContent = raw_text || '—';
+
+      statusEl.textContent = 'Done. See table & charts.';
+      statusEl.className = 'status ok';
+    }catch(err){
+      output.innerHTML = prev;
+      statusEl.textContent = `Error: ${err.message}`;
+      statusEl.className = 'status err';
+      alert(`Error: ${err.message}`);
+    }finally{
+      submitBtn.disabled = false;
     }
+  });
 
-    addBtn.addEventListener('click', () => fileInput.click());
-
-    fileInput.addEventListener('change', async (e) => {
-      // Handle file upload and processing
-      const file = e.target.files?.[0];
-      if (!file) return;
-
-      addBtn.disabled = true;
-      const prev = output.innerHTML;
-      if (!meals.length) output.innerHTML = "<span class='muted'>Processing...</span>";
-
-      try {
-        const { parsed = {}, raw_text = '', filename = file.name } = await sendImage(file);
-        const p = Number(parsed.protein_g) || 0;
-        const f = Number(parsed.fat_g) || 0;
-        const c = Number(parsed.carbs_g) || 0;
-        meals.push({ file: filename, protein: p, fat: f, carbs: c });
-        drawTable();
-        rawOut.textContent = raw_text || '—';
-      } catch (err) {
-        output.innerHTML = prev;
-        alert(`Error: ${err.message}`);
-      } finally {
-        addBtn.disabled = false;
-        fileInput.value = "";
-      }
-    });
-
-    drawTable();
-  </script>
+  renderTable();
+</script>
 </body>
 </html>
