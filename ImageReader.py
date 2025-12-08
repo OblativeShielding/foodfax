@@ -4,8 +4,16 @@ import easyocr, re
 from io import BytesIO
 from PIL import Image
 import numpy as np
+import os
 
-app = Flask(__name__, static_folder='.', static_url_path='')
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+print("Serving from folder:", BASE_DIR)
+
+app = Flask(
+    __name__,
+    static_folder=BASE_DIR,
+    static_url_path=""
+)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 reader = easyocr.Reader(['en'], gpu=False, verbose=False)
@@ -29,11 +37,15 @@ def parse_nutrition(text: str):
         r'^(?:\s*)total\s+fat\s*(\d+(?:\.\d+)?)\s*g',
         r'\bfat\s*[:\-]?\s*(\d+(?:\.\d+)?)\s*g(?!.*trans)',
     ])
+
     carbs_g = gf_first([
         r'\btotal\s+carbohydrate(?:s)?\s*[:\-]?\s*(\d+(?:\.\d+)?)\s*g',
         r'\bcarb(?:ohydrate|s)?\s*[:\-]?\s*(\d+(?:\.\d+)?)\s*g',
     ])
-    protein_g = gf_first([r'\bprotein\s*[:\-]?\s*(\d+(?:\.\d+)?)\s*g'])
+
+    protein_g = gf_first([
+        r'\bprotein\s*[:\-]?\s*(\d+(?:\.\d+)?)\s*g'
+    ])
 
     return {
         "calories": gi(r'\bcalories?\s*[:\-]?\s*(\d{1,4})'),
@@ -49,12 +61,10 @@ def ocr():
         return jsonify({"error": "No file provided under form field 'image'."}), 400
 
     try:
-
         img = Image.open(BytesIO(f.read()))
         if img.mode not in ("RGB", "L"):
             img = img.convert("RGB")
         arr = np.array(img)
-
         lines = reader.readtext(arr, detail=0)
     except Exception as e:
         return jsonify({"error": f"OCR failed: {e}"}), 500
@@ -63,12 +73,12 @@ def ocr():
     return jsonify({
         "parsed": parse_nutrition(text),
         "raw_text": text,
-        "filename": f.filename  # keep the user's original filename
+        "filename": f.filename
     })
 
 @app.get("/")
 def index():
-    return send_from_directory(".", "foodFax.html")
+    return send_from_directory(BASE_DIR, "foodFax.html")
 
 if __name__ == "__main__":
-     app.run(debug=True)
+    app.run(debug=True)
