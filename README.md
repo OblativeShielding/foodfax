@@ -89,5 +89,5 @@ FoodFax is a web application that allows users to upload images of food nutritio
 ## Development Between Milestones
 Since milestone two, we have added many things to the actual web app and changed many notable features. The most obvious change is the background went from a light theme to a dark theme, meant to be easier on the eyes for longer periods of use. We also made the numbers more noticeable and made the submit button glow when it’s being hovered over. With these changes, we decided to style the entire webpage using CSS rather than basic html. All of these design changes were implemented while keeping both functionality and styling in mind.
 
-[A comparison of Milestone 3 versus Milestone 4](https://github.com/OblativeShielding/foodfax/blob/main/FoodFaxM3vsM4.png)
+![A comparison of Milestone 3 versus Milestone 4](https://github.com/OblativeShielding/foodfax/blob/main/FoodFaxM3vsM4.png)
 ---
